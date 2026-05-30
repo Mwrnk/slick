@@ -7,7 +7,8 @@
     "dev": "bun index.tsx"
   },
   "dependencies": {
-    "ink": "^5.1.0",
+    "cli-spinners": "^3.4.0",
+    "ink": "^7.0.5",
     "react": "^18.3.1"
   },
   "devDependencies": {

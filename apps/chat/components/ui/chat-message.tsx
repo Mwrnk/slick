@@ -71,7 +71,7 @@ export const ChatMessage = ({
   const dots = ["", "●", "●●", "●●●"][dotFrame] ?? "";
 
   const childrenText = typeof children === "string" ? children : "";
-  const firstLine = childrenText.split("")[0] ?? "";
+  const firstLine = childrenText.split("\n")[0] ?? "";
 
   const renderContent = () => {
     if (streaming) {
@@ -92,7 +92,7 @@ export const ChatMessage = ({
         <Box>
           <Text dimColor>
             {firstLine.slice(0, 60)}
-            {firstLine.length > 60 || childrenText.includes("") ? "..." : ""}
+            {firstLine.length > 60 || childrenText.includes("\n") ? "..." : ""}
           </Text>
         </Box>
       );
