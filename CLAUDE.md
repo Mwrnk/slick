@@ -15,18 +15,9 @@ Test imports: `from "bun:test"`, not `from "vitest"`.
 - [x] Task 4: RoomManager (`src/ws/room.ts`)
 - [x] Task 5: Server + middleware + test helpers
 - [x] Task 6: Auth routes (`src/routes/auth.ts`)
-- [ ] **Task 7: Workspace + Channel routes** ← NEXT
-- [ ] Task 8: WS event handler
-- [ ] Task 9: E2E WebSocket test
-
-## Next step — Task 7
-
-User writes:
-1. `tests/integration/channels.test.ts` — 4 tests (unauth 401, create+list workspace, create+list channel, isolation)
-2. `src/routes/workspaces.ts` — GET / and POST /
-3. `src/routes/channels.ts` — GET /:workspaceId and POST /:workspaceId
-
-Stubs for workspaces.ts and channels.ts already exist (empty Hono apps).
+- [x] Task 7: Workspace + Channel routes
+- [x] Task 8: WS event handler
+- [ ] **Task 9: E2E WebSocket test** ← NEXT
 
 ## Collaboration rules
 - `[U]` tasks: guide user step by step, let them write

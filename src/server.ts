@@ -37,7 +37,7 @@ export default {
   fetch: app.fetch,
   websocket: {
     message(ws: any, raw: string) {
-      handleMessage(ws, raw, rooms);
+      handleMessage(ws, raw, rooms, db);
     },
     close(ws: any) {
       rooms.leaveAll(ws);
