@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "bun run src/server.ts",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "bun test",
+    "test:watch": "bun test --watch"
   },
   "dependencies": {
     "hono": "^4.6.0"
