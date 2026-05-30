@@ -7,6 +7,7 @@ export type BigTextFont = "block" | "simple" | "shade" | "slim";
 export interface BigTextProps {
   children: string;
   color?: string;
+  colors?: string[];
   font?: BigTextFont;
 }
 
@@ -374,13 +375,22 @@ const SHADE_CHARS: Record<number, string> = {
 };
 
 const renderShadeRow = (row: number[]): string =>
-  row.map((p) => (p ? (SHADE_CHARS[3] ?? "▓") : "")).join("");
+  row.map((p) => (p ? (SHADE_CHARS[3] ?? "▓") : " ")).join("");
 
-export const BigText = ({ children, color, font = "block" }: BigTextProps) => {
+export const BigText = ({
+  children,
+  color,
+  colors,
+  font = "block",
+}: BigTextProps) => {
   const theme = useTheme();
   const resolvedColor = color ?? theme.colors.primary;
 
   const chars = [...children];
+  const getColor = (index: number) =>
+    colors && colors.length > 0
+      ? colors[Math.min(index, colors.length - 1)]
+      : resolvedColor;
 
   if (font === "slim") {
     const rowCount = 3;
@@ -393,7 +403,7 @@ export const BigText = ({ children, color, font = "block" }: BigTextProps) => {
               const slimChar = SLIM_FONT[upper] ?? SLIM_FONT[ch];
               const line = slimChar ? (slimChar[rowIdx] ?? "") : "";
               return (
-                <Text key={charIdx} color={resolvedColor}>
+                <Text key={charIdx} color={getColor(charIdx)}>
                   {`${line} `}
                 </Text>
               );
@@ -408,7 +418,7 @@ export const BigText = ({ children, color, font = "block" }: BigTextProps) => {
   if (font === "block") {
     onChar = "█";
   }
-  const offChar = "";
+  const offChar = " ";
   const rows = 5;
 
   return (
@@ -423,7 +433,7 @@ export const BigText = ({ children, color, font = "block" }: BigTextProps) => {
                 ? renderShadeRow(row)
                 : row.map((pixel) => (pixel ? onChar : offChar)).join("");
             return (
-              <Text key={charIdx} color={resolvedColor}>
+              <Text key={charIdx} color={getColor(charIdx)}>
                 {`${rowStr} `}
               </Text>
             );

@@ -1,6 +1,7 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
   "style": "default",
+  "rsc": false,
   "tsx": true,
   "tailwind": {
     "config": "",
@@ -8,11 +9,15 @@
     "baseColor": "neutral",
     "cssVariables": false
   },
+  "iconLibrary": "lucide",
   "aliases": {
     "components": "components",
     "utils": "lib/utils",
     "ui": "components/ui",
     "lib": "lib",
     "hooks": "hooks"
+  },
+  "registries": {
+    "@termcn": "https://termcn.vercel.app/r/{name}.json"
   }
 }

@@ -59,9 +59,9 @@ const LoginFlowRoot = ({
     <Box flexDirection="column" paddingLeft={padding}>
       {title && (
         <Box marginBottom={1}>
-          {title.includes("") ? (
+          {title.includes("\n") ? (
             <Box flexDirection="column">
-              {title.split("").map((line, i) => (
+              {title.split("\n").map((line, i) => (
                 <BigText key={i} font={titleFont} color={resolvedColor}>
                   {line}
                 </BigText>
@@ -169,10 +169,10 @@ const LoginFlowSelect = ({
         return (
           <Box key={i} flexDirection="row">
             <Text color={isActive ? cursorColor : undefined}>
-              {isActive ? `${cursor} ` : ""}
+              {isActive ? `${cursor} ` : "  "}
             </Text>
             <Text color={isActive ? undefined : undefined} dimColor={!isActive}>
-              {i + 1}.{""}
+              {i + 1}.{" "}
             </Text>
             <Text color={isActive ? activeColor : undefined}>{opt}</Text>
           </Box>
