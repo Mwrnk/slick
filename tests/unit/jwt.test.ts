@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, afterEach, setSystemTime } from "bun:test";
 import { sign, verify } from "../../src/lib/jwt";
 
 describe("JWT", () => {
   afterEach(() => {
-    vi.useRealTimers();
+    setSystemTime(); // reset fake time
   });
 
   it("round-trip: sign then verify returns payolad", async () => {
@@ -29,8 +29,7 @@ describe("JWT", () => {
   it("expired token -> null", async () => {
     const token = await sign({ sub: "user-123", username: "alice" });
 
-    vi.useFakeTimers();
-    vi.setSystemTime(Date.now() + 8 * 24 * 60 * 60 * 1000); //+8 days
+    setSystemTime(Date.now() + 8 * 24 * 60 * 60 * 1000); // +8 days
 
     expect(await verify(token)).toBeNull();
   });
