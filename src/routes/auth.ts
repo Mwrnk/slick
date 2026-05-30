@@ -3,6 +3,8 @@ import type { Database } from "bun:sqlite";
 import { createUser, findUserByUsername } from "../db/queries";
 import { sign } from "../lib/jwt";
 
+const DUMMY_HASH = await Bun.password.hash("dummy");
+
 export function authRoutes(db: Database): Hono {
   const app = new Hono();
 
@@ -26,11 +28,9 @@ export function authRoutes(db: Database): Hono {
   app.post("/login", async (c) => {
     const { username, password } = await c.req.json();
     const user = findUserByUsername(db, username);
-    if (!user) {
-      return c.json({ error: "Invalid username or password" }, 401);
-    }
-    const valid = await Bun.password.verify(password, user.password_hash);
-    if (!valid) {
+    const hash = user?.password_hash ?? DUMMY_HASH;
+    const valid = await Bun.password.verify(password ?? "", hash);
+    if (!user || !valid) {
       return c.json({ error: "Invalid username or password" }, 401);
     }
     const token = await sign({ sub: user.id, username: user.username });
