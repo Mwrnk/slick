@@ -27,7 +27,7 @@ app.get("/ws", async (c) => {
   const payload = await verify(token);
   if (!payload) return c.json({ error: "unauthorized" }, 401);
 
-  const upgraded = c.env.upgrade({ userId: payload.sub, username: payload.username });
+  const upgraded = c.env.upgrade(c.req.raw, { data: { userId: payload.sub, username: payload.username } });
   if (!upgraded) return c.json({ error: "upgrade failed" }, 500);
   return new Response(null, { status: 101 });
 });
