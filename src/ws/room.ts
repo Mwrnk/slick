@@ -45,6 +45,19 @@ export class RoomManager {
     return Array.from(this.onlineUsers.entries()).map(([userId, username]) => ({ userId, username }));
   }
 
+  getOnlineUsersInChannels(channelIds: string[]): { userId: string; username: string }[] {
+    const channelSet = new Set(channelIds);
+    const result = new Map<string, string>(); // userId -> username, deduplicated
+    for (const [channelId, members] of this.channels) {
+      if (!channelSet.has(channelId)) continue;
+      for (const ws of members) {
+        const { userId, username } = ws.data;
+        if (this.onlineUsers.has(userId)) result.set(userId, username);
+      }
+    }
+    return Array.from(result.entries()).map(([userId, username]) => ({ userId, username }));
+  }
+
   disconnectUser(ws: ServerWebSocket<WsData>): void {
     const { userId, username } = ws.data;
     for (const [channelId, userTimers] of this.typingTimers) {

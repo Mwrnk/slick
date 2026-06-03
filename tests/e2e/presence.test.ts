@@ -125,8 +125,17 @@ describe("WS presence + typing E2E", () => {
     });
     const workspace = await wsRes.json();
 
+    // create a channel so alice3 can join it
+    const chRes = await fetch(`${base}/channels/${workspace.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ name: "general" }),
+    });
+    const channel = await chRes.json();
+
     const ws = new WebSocket(`${wsBase}/ws?token=${token}`);
     await new Promise<void>((r) => { ws.onopen = () => r(); });
+    ws.send(JSON.stringify({ type: "join", channelId: channel.id }));
     await new Promise((r) => setTimeout(r, 50));
 
     const presRes = await fetch(`${base}/workspaces/${workspace.id}/presence`, {

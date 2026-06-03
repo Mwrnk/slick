@@ -78,6 +78,38 @@ describe("RoomManager — presence", () => {
     expect(rooms.getOnlineUsers()).toHaveLength(0);
   });
 
+  it("getOnlineUsersInChannels returns only users in given channels", () => {
+    const rooms = new RoomManager();
+    const ws = makeWs("u1", "alice");
+    const outsider = makeWs("u2", "bob");
+    rooms.join("ch-workspace", ws);
+    rooms.join("ch-other", outsider);
+    rooms.markOnline("u1", "alice");
+    rooms.markOnline("u2", "bob");
+    const result = rooms.getOnlineUsersInChannels(["ch-workspace"]);
+    expect(result.some((u) => u.userId === "u1" && u.username === "alice")).toBe(true);
+    expect(result.some((u) => u.userId === "u2")).toBe(false);
+  });
+
+  it("getOnlineUsersInChannels deduplicates users in multiple channels", () => {
+    const rooms = new RoomManager();
+    const ws = makeWs("u1", "alice");
+    rooms.join("ch-1", ws);
+    rooms.join("ch-2", ws);
+    rooms.markOnline("u1", "alice");
+    const result = rooms.getOnlineUsersInChannels(["ch-1", "ch-2"]);
+    expect(result.filter((u) => u.userId === "u1")).toHaveLength(1);
+  });
+
+  it("getOnlineUsersInChannels excludes offline users in channels", () => {
+    const rooms = new RoomManager();
+    const ws = makeWs("u1", "alice");
+    rooms.join("ch-1", ws);
+    // NOT marked online
+    const result = rooms.getOnlineUsersInChannels(["ch-1"]);
+    expect(result.some((u) => u.userId === "u1")).toBe(false);
+  });
+
   it("disconnectUser broadcasts presence offline then removes", () => {
     const rooms = new RoomManager();
     const ws = makeWs("u1", "alice");
