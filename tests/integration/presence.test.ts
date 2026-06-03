@@ -65,4 +65,38 @@ describe("GET /workspaces/:id/presence", () => {
     const body = await res.json();
     expect(body.some((u: any) => u.userId === "u-123" && u.username === "bob")).toBe(true);
   });
+
+  it("returns 403 for non-owner", async () => {
+    const db = createTestDb();
+    const rooms = new RoomManager();
+    const app = createTestApp(db, rooms);
+
+    // alice creates workspace
+    const aliceReg = await app.request("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: "alice_403", password: "pw" }),
+    });
+    const { token: aliceToken } = await aliceReg.json();
+
+    const wsRes = await app.request("/workspaces", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${aliceToken}` },
+      body: JSON.stringify({ name: "acme" }),
+    });
+    const workspace = await wsRes.json();
+
+    // bob tries to query alice's workspace presence
+    const bobReg = await app.request("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: "bob_403", password: "pw" }),
+    });
+    const { token: bobToken } = await bobReg.json();
+
+    const res = await app.request(`/workspaces/${workspace.id}/presence`, {
+      headers: { Authorization: `Bearer ${bobToken}` },
+    });
+    expect(res.status).toBe(403);
+  });
 });
