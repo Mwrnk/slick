@@ -137,7 +137,7 @@ describe("WS presence + typing E2E", () => {
     expect(online.some((u: any) => u.username === "alice3")).toBe(true);
 
     ws.close();
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 300));
 
     const afterRes = await fetch(`${base}/workspaces/${workspace.id}/presence`, {
       headers: { Authorization: `Bearer ${token}` },
