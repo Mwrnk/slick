@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { Database } from "bun:sqlite";
-import { createChannel, listChannels } from "../db/queries";
+import { createChannel, listChannels, getMessages } from "../db/queries";
 
 export function channelRoutes(db: Database): Hono {
   const app = new Hono();
@@ -33,6 +33,22 @@ export function channelRoutes(db: Database): Hono {
       .query("SELECT id, name FROM channels WHERE workspace_id = ?")
       .all(workspaceId);
     return c.json(channels, 200);
+  });
+
+  app.get("/:channelId/messages", (c) => {
+    const { channelId } = c.req.param();
+    const before = c.req.query("before") ?? null;
+    const limit = Number(c.req.query("limit") ?? "50");
+    const { messages, hasMore } = getMessages(db, channelId, before, limit);
+    const mapped = messages.map((m) => ({
+      id: m.id,
+      channelId: m.channel_id,
+      userId: m.user_id,
+      username: m.username,
+      text: m.text,
+      createdAt: m.created_at,
+    }));
+    return c.json({ messages: mapped, hasMore });
   });
 
   return app;
