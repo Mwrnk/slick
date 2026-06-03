@@ -1,11 +1,13 @@
 import { Database } from "bun:sqlite";
 import { Hono } from "hono";
+import type { ServerWebSocket } from "bun";
 import { runMigrations } from "./db/schema";
 import { authMiddleware } from "./middleware/auth";
 import { authRoutes } from "./routes/auth";
 import { workspaceRoutes } from "./routes/workspaces";
 import { channelRoutes } from "./routes/channels";
 import { RoomManager } from "./ws/room";
+import type { WsData } from "./ws/room";
 import { handleMessage } from "./ws/handler";
 import { verify } from "./lib/jwt";
 
@@ -36,13 +38,13 @@ export default {
   port: Number(process.env.PORT ?? 3000),
   fetch: app.fetch,
   websocket: {
-    open(ws: any) {
+    open(ws: ServerWebSocket<WsData>) {
       rooms.markOnline(ws.data.userId, ws.data.username);
     },
-    message(ws: any, raw: string) {
+    message(ws: ServerWebSocket<WsData>, raw: string) {
       handleMessage(ws, raw, rooms, db);
     },
-    close(ws: any) {
+    close(ws: ServerWebSocket<WsData>) {
       rooms.disconnectUser(ws);
     },
   },
