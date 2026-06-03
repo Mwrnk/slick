@@ -30,5 +30,10 @@ export function workspaceRoutes(db: Database, rooms?: RoomManager): Hono {
     return c.json(ws, 201);
   });
 
+  app.get("/:id/presence", (c) => {
+    if (!rooms) return c.json([], 200);
+    return c.json(rooms.getOnlineUsers());
+  });
+
   return app;
 }
