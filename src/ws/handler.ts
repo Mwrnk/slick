@@ -57,7 +57,7 @@ export function handleMessage(
       const { channelId } = event;
       if (!channelId) { send(ws, { type: "error", message: "channelId required" }); return; }
       if (!rooms.isInChannel(channelId, ws)) { send(ws, { type: "error", message: "not in channel" }); return; }
-      rooms.startTyping(channelId, userId, username);
+      rooms.startTyping(channelId, userId, username, ws);
       break;
     }
     default: {

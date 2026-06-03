@@ -64,12 +64,12 @@ export class RoomManager {
     this.markOffline(userId);
   }
 
-  startTyping(channelId: string, userId: string, username: string): void {
+  startTyping(channelId: string, userId: string, username: string, except?: ServerWebSocket<WsData>): void {
     if (!this.typingTimers.has(channelId)) this.typingTimers.set(channelId, new Map());
     const existing = this.typingTimers.get(channelId)!.get(userId);
     if (existing) clearTimeout(existing);
     const timer = setTimeout(() => {
-      this.broadcast(channelId, { type: "stopped_typing", channelId, userId, username });
+      this.broadcast(channelId, { type: "stopped_typing", channelId, userId, username }, except);
       const userTimers = this.typingTimers.get(channelId);
       if (userTimers) {
         userTimers.delete(userId);
@@ -77,6 +77,6 @@ export class RoomManager {
       }
     }, 3000);
     this.typingTimers.get(channelId)!.set(userId, timer);
-    this.broadcast(channelId, { type: "typing", channelId, userId, username });
+    this.broadcast(channelId, { type: "typing", channelId, userId, username }, except);
   }
 }
