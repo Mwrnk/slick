@@ -4,6 +4,8 @@ export type WsData = { userId: string; username: string };
 
 export class RoomManager {
   private channels = new Map<string, Set<ServerWebSocket<WsData>>>();
+  private onlineUsers = new Map<string, string>(); // userId -> username
+  private typingTimers = new Map<string, Map<string, ReturnType<typeof setTimeout>>>();
 
   join(channelId: string, ws: ServerWebSocket<WsData>) {
     if (!this.channels.has(channelId)) this.channels.set(channelId, new Set());
@@ -29,5 +31,40 @@ export class RoomManager {
 
   isInChannel(channelId: string, ws: ServerWebSocket<WsData>): boolean {
     return this.channels.get(channelId)?.has(ws) ?? false;
+  }
+
+  markOnline(userId: string, username: string): void {
+    this.onlineUsers.set(userId, username);
+  }
+
+  markOffline(userId: string): void {
+    this.onlineUsers.delete(userId);
+  }
+
+  getOnlineUsers(): { userId: string; username: string }[] {
+    return Array.from(this.onlineUsers.entries()).map(([userId, username]) => ({ userId, username }));
+  }
+
+  disconnectUser(ws: ServerWebSocket<WsData>): void {
+    const { userId, username } = ws.data;
+    for (const [channelId, members] of this.channels) {
+      if (members.has(ws)) {
+        members.delete(ws);
+        this.broadcast(channelId, { type: "presence", userId, username, status: "offline" });
+      }
+    }
+    this.markOffline(userId);
+  }
+
+  startTyping(channelId: string, userId: string, username: string): void {
+    if (!this.typingTimers.has(channelId)) this.typingTimers.set(channelId, new Map());
+    const existing = this.typingTimers.get(channelId)!.get(userId);
+    if (existing) clearTimeout(existing);
+    const timer = setTimeout(() => {
+      this.broadcast(channelId, { type: "stopped_typing", channelId, userId, username });
+      this.typingTimers.get(channelId)?.delete(userId);
+    }, 3000);
+    this.typingTimers.get(channelId)!.set(userId, timer);
+    this.broadcast(channelId, { type: "typing", channelId, userId, username });
   }
 }

@@ -60,3 +60,49 @@ describe("RoomManager", () => {
     expect(rooms.isInChannel("ch-2", ws)).toBe(false);
   });
 });
+
+describe("RoomManager — presence", () => {
+  it("markOnline / getOnlineUsers", () => {
+    const rooms = new RoomManager();
+    rooms.markOnline("u1", "alice");
+    rooms.markOnline("u2", "bob");
+    const online = rooms.getOnlineUsers();
+    expect(online).toHaveLength(2);
+    expect(online.some((u) => u.userId === "u1" && u.username === "alice")).toBe(true);
+  });
+
+  it("markOffline removes user", () => {
+    const rooms = new RoomManager();
+    rooms.markOnline("u1", "alice");
+    rooms.markOffline("u1");
+    expect(rooms.getOnlineUsers()).toHaveLength(0);
+  });
+
+  it("disconnectUser broadcasts presence offline then removes", () => {
+    const rooms = new RoomManager();
+    const ws = makeWs("u1", "alice");
+    const observer = makeWs("u2", "bob");
+    rooms.join("ch-1", ws);
+    rooms.join("ch-1", observer);
+    rooms.markOnline("u1", "alice");
+    rooms.disconnectUser(ws);
+    expect(rooms.isInChannel("ch-1", ws)).toBe(false);
+    expect(rooms.getOnlineUsers().some((u) => u.userId === "u1")).toBe(false);
+    const calls = (observer.send as ReturnType<typeof mock>).mock.calls;
+    const msgs = calls.map((c: any[]) => JSON.parse(c[0]));
+    expect(msgs.some((m: any) => m.type === "presence" && m.status === "offline" && m.userId === "u1")).toBe(true);
+  });
+});
+
+describe("RoomManager — typing", () => {
+  it("startTyping broadcasts typing event to channel", () => {
+    const rooms = new RoomManager();
+    const alice = makeWs("u1", "alice");
+    const bob = makeWs("u2", "bob");
+    rooms.join("ch-1", alice);
+    rooms.join("ch-1", bob);
+    rooms.startTyping("ch-1", "u1", "alice");
+    const msgs = (bob.send as ReturnType<typeof mock>).mock.calls.map((c: any[]) => JSON.parse(c[0]));
+    expect(msgs.some((m: any) => m.type === "typing" && m.userId === "u1")).toBe(true);
+  });
+});
