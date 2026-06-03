@@ -38,7 +38,8 @@ export function channelRoutes(db: Database): Hono {
   app.get("/:channelId/messages", (c) => {
     const { channelId } = c.req.param();
     const before = c.req.query("before") ?? null;
-    const limit = Number(c.req.query("limit") ?? "50");
+    const rawLimit = parseInt(c.req.query("limit") ?? "50", 10);
+    const limit = isNaN(rawLimit) || rawLimit <= 0 ? 50 : rawLimit;
     const { messages, hasMore } = getMessages(db, channelId, before, limit);
     const mapped = messages.map((m) => ({
       id: m.id,
