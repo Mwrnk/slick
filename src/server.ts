@@ -18,7 +18,7 @@ const app = new Hono();
 app.route("/auth", authRoutes(db));
 app.use("/workspaces/*", authMiddleware);
 app.use("/channels/*", authMiddleware);
-app.route("/workspaces", workspaceRoutes(db));
+app.route("/workspaces", workspaceRoutes(db, rooms));
 app.route("/channels", channelRoutes(db));
 
 app.get("/ws", async (c) => {
@@ -36,11 +36,14 @@ export default {
   port: Number(process.env.PORT ?? 3000),
   fetch: app.fetch,
   websocket: {
+    open(ws: any) {
+      rooms.markOnline(ws.data.userId, ws.data.username);
+    },
     message(ws: any, raw: string) {
       handleMessage(ws, raw, rooms, db);
     },
     close(ws: any) {
-      rooms.leaveAll(ws);
+      rooms.disconnectUser(ws);
     },
   },
 };
