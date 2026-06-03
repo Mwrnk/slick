@@ -1,12 +1,15 @@
 import { describe, it, expect } from "bun:test";
+import type { Database } from "bun:sqlite";
 import { createTestDb } from "../helpers";
-import { createMessage, getMessages, createUser, createWorkspace, createChannel } from "../../src/db/queries";
+import { createUser, createWorkspace, createChannel, createMessage, getMessages } from "../../src/db/queries";
 
-function seedMessages(db: ReturnType<typeof createTestDb>, channelId: string, userId: string, count: number) {
+function seedMessages(db: Database, channelId: string, userId: string, count: number) {
+  const base = Date.now();
   for (let i = 0; i < count; i++) {
-    createMessage(db, channelId, userId, `msg-${i}`);
-    // Small delay to ensure different timestamps
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1);
+    db.run(
+      "INSERT INTO messages (id, channel_id, user_id, text, created_at) VALUES (?, ?, ?, ?, ?)",
+      [crypto.randomUUID(), channelId, userId, `msg-${i}`, base + i]
+    );
   }
 }
 
@@ -26,7 +29,9 @@ describe("getMessages", () => {
     const result = getMessages(db, ch.id, null, 50);
     expect(result.messages).toHaveLength(3);
     expect(result.hasMore).toBe(false);
-    expect(result.messages[0].created_at).toBeGreaterThanOrEqual(result.messages[1].created_at);
+    for (let i = 0; i < result.messages.length - 1; i++) {
+      expect(result.messages[i].created_at).toBeGreaterThan(result.messages[i + 1].created_at);
+    }
   });
 
   it("caps at limit and sets hasMore", () => {
