@@ -108,14 +108,16 @@ export function getMessages(
   let rows: Message[];
   if (before) {
     rows = db.query(`
+      WITH pivot AS (SELECT created_at, id FROM messages WHERE id = ?)
       SELECT m.id, m.channel_id, m.user_id, u.username, m.text, m.created_at
       FROM messages m
       JOIN users u ON u.id = m.user_id
+      CROSS JOIN pivot p
       WHERE m.channel_id = ?
-        AND m.created_at < (SELECT created_at FROM messages WHERE id = ?)
-      ORDER BY m.created_at DESC
+        AND (m.created_at < p.created_at OR (m.created_at = p.created_at AND m.id < p.id))
+      ORDER BY m.created_at DESC, m.id DESC
       LIMIT ?
-    `).all(channelId, before, cap + 1) as Message[];
+    `).all(before, channelId, cap + 1) as Message[];
   } else {
     rows = db.query(`
       SELECT m.id, m.channel_id, m.user_id, u.username, m.text, m.created_at
