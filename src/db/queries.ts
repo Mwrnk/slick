@@ -21,6 +21,15 @@ export type Channel = {
   created_at: number;
 };
 
+export type Message = {
+  id: string;
+  channel_id: string;
+  user_id: string;
+  username: string;
+  text: string;
+  created_at: number;
+};
+
 export function createUser(db: Database, username: string, passwordHash: string): User {
   const user: User = {
     id: crypto.randomUUID(),
@@ -87,4 +96,36 @@ export function createMessage(
     "INSERT INTO messages (id, channel_id, user_id, text, created_at) VALUES (?, ?, ?, ?, ?)",
     [crypto.randomUUID(), channelId, userId, text, Date.now()]
   );
+}
+
+export function getMessages(
+  db: Database,
+  channelId: string,
+  before: string | null,
+  limit: number
+): { messages: Message[]; hasMore: boolean } {
+  const cap = Math.min(limit, 100);
+  let rows: Message[];
+  if (before) {
+    rows = db.query(`
+      SELECT m.id, m.channel_id, m.user_id, u.username, m.text, m.created_at
+      FROM messages m
+      JOIN users u ON u.id = m.user_id
+      WHERE m.channel_id = ?
+        AND m.created_at < (SELECT created_at FROM messages WHERE id = ?)
+      ORDER BY m.created_at DESC
+      LIMIT ?
+    `).all(channelId, before, cap + 1) as Message[];
+  } else {
+    rows = db.query(`
+      SELECT m.id, m.channel_id, m.user_id, u.username, m.text, m.created_at
+      FROM messages m
+      JOIN users u ON u.id = m.user_id
+      WHERE m.channel_id = ?
+      ORDER BY m.created_at DESC
+      LIMIT ?
+    `).all(channelId, cap + 1) as Message[];
+  }
+  const hasMore = rows.length > cap;
+  return { messages: rows.slice(0, cap), hasMore };
 }
