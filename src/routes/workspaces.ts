@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import type { Database } from "bun:sqlite";
+import type { RoomManager } from "../ws/room";
 
-export function workspaceRoutes(db: Database): Hono {
+export function workspaceRoutes(db: Database, rooms?: RoomManager): Hono {
   const app = new Hono();
 
   app.get("/", (c) => {

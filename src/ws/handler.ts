@@ -6,7 +6,8 @@ import type { RoomManager, WsData } from "./room";
 type IncomingEvent =
   | { type: "join"; channelId: string }
   | { type: "leave"; channelId: string }
-  | { type: "message"; channelId: string; text: string };
+  | { type: "message"; channelId: string; text: string }
+  | { type: "typing"; channelId: string };
 
 function send(ws: ServerWebSocket<WsData>, data: object) {
   ws.send(JSON.stringify(data));
@@ -50,6 +51,13 @@ export function handleMessage(
       const createdAt = Date.now();
       createMessage(db, channelId, userId, text);
       rooms.broadcast(channelId, { type: "message", channelId, userId, username, text, createdAt });
+      break;
+    }
+    case "typing": {
+      const { channelId } = event;
+      if (!channelId) { send(ws, { type: "error", message: "channelId required" }); return; }
+      if (!rooms.isInChannel(channelId, ws)) { send(ws, { type: "error", message: "not in channel" }); return; }
+      rooms.startTyping(channelId, userId, username);
       break;
     }
     default: {

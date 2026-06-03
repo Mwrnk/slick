@@ -15,20 +15,21 @@ export function createTestDb(): Database {
   return db;
 }
 
-export function createTestApp(db: Database): Hono {
+export function createTestApp(db: Database, rooms?: RoomManager): Hono {
+  const r = rooms ?? new RoomManager();
   const app = new Hono();
   app.route("/auth", authRoutes(db));
   app.use("/workspaces/*", authMiddleware);
   app.use("/channels/*", authMiddleware);
-  app.route("/workspaces", workspaceRoutes(db));
+  app.route("/workspaces", workspaceRoutes(db, r));
   app.route("/channels", channelRoutes(db));
   return app;
 }
 
 export function createTestServer() {
   const db = createTestDb();
-  const app = createTestApp(db);
   const rooms = new RoomManager();
+  const app = createTestApp(db, rooms);
 
   app.get("/ws", async (c) => {
     const token = c.req.query("token");
@@ -44,10 +45,11 @@ export function createTestServer() {
     port: 0,
     fetch: app.fetch,
     websocket: {
+      open(ws) { rooms.markOnline(ws.data.userId, ws.data.username); },
       message(ws, raw) { handleMessage(ws, raw as string, rooms, db); },
-      close(ws) { rooms.leaveAll(ws); },
+      close(ws) { rooms.disconnectUser(ws); },
     },
   });
 
-  return { server, db };
+  return { server, db, rooms };
 }
