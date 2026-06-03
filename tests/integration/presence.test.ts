@@ -61,6 +61,7 @@ describe("GET /workspaces/:id/presence", () => {
     const res = await app.request(`/workspaces/${workspace.id}/presence`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.some((u: any) => u.userId === "u-123" && u.username === "bob")).toBe(true);
   });
