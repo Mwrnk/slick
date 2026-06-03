@@ -31,6 +31,11 @@ export function workspaceRoutes(db: Database, rooms?: RoomManager): Hono {
   });
 
   app.get("/:id/presence", (c) => {
+    const { id } = c.req.param();
+    const { sub: userId } = c.get("user");
+    const workspace = db.query("SELECT owner_id FROM workspaces WHERE id = ?").get(id) as { owner_id: string } | null;
+    if (!workspace) return c.json({ error: "not found" }, 404);
+    if (workspace.owner_id !== userId) return c.json({ error: "forbidden" }, 403);
     if (!rooms) return c.json([], 200);
     return c.json(rooms.getOnlineUsers());
   });
