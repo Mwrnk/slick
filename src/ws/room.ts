@@ -68,13 +68,13 @@ export class RoomManager {
         if (userTimers.size === 0) this.typingTimers.delete(channelId);
       }
     }
+    this.markOffline(userId);
     for (const [channelId, members] of this.channels) {
       if (members.has(ws)) {
         members.delete(ws);
         this.broadcast(channelId, { type: "presence", userId, username, status: "offline" });
       }
     }
-    this.markOffline(userId);
   }
 
   startTyping(channelId: string, userId: string, username: string, except?: ServerWebSocket<WsData>): void {
