@@ -20,6 +20,9 @@ export type SlickState = {
   messages: Map<string, Message[]>;
   sendMessage: (text: string) => void;
   wsStatus: WsStatus;
+  typingUsers: Map<string, string[]>;
+  onlineUsers: { userId: string; username: string }[];
+  sendTyping: () => void;
 };
 
 type Options = { token: string; username: string };
@@ -29,6 +32,8 @@ export function useSlick({ token }: Options): SlickState {
   const [activeChannelId, setActiveChannelId] = useState('');
   const [messages, setMessages] = useState<Map<string, Message[]>>(new Map());
   const [wsStatus, setWsStatus] = useState<WsStatus>('connecting');
+  const [typingUsers, setTypingUsers] = useState<Map<string, string[]>>(new Map());
+  const [onlineUsers, setOnlineUsers] = useState<{ userId: string; username: string }[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
 
   const appendMessage = useCallback((msg: Message) => {
@@ -95,6 +100,11 @@ export function useSlick({ token }: Options): SlickState {
             createdAt: Date.now(),
             system: true,
           });
+          setOnlineUsers(prev =>
+            prev.some((u) => u.userId === msg.userId)
+              ? prev
+              : [...prev, { userId: msg.userId, username: msg.username }]
+          );
         } else if (msg.type === 'left') {
           appendMessage({
             id: crypto.randomUUID(),
@@ -104,6 +114,24 @@ export function useSlick({ token }: Options): SlickState {
             createdAt: Date.now(),
             system: true,
           });
+        } else if (msg.type === 'typing') {
+          setTypingUsers(prev => {
+            const next = new Map(prev);
+            const current = next.get(msg.channelId) ?? [];
+            if (!current.includes(msg.username)) {
+              next.set(msg.channelId, [...current, msg.username]);
+            }
+            return next;
+          });
+        } else if (msg.type === 'stopped_typing') {
+          setTypingUsers(prev => {
+            const next = new Map(prev);
+            const current = next.get(msg.channelId) ?? [];
+            next.set(msg.channelId, current.filter((u: string) => u !== msg.username));
+            return next;
+          });
+        } else if (msg.type === 'presence' && msg.status === 'offline') {
+          setOnlineUsers(prev => prev.filter((u) => u.userId !== msg.userId));
         }
       };
 
@@ -119,6 +147,15 @@ export function useSlick({ token }: Options): SlickState {
     };
   }, [token]);
 
+  const sendTyping = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'typing',
+        channelId: activeChannelId,
+      }));
+    }
+  }, [activeChannelId]);
+
   const sendMessage = useCallback((text: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
@@ -129,5 +166,5 @@ export function useSlick({ token }: Options): SlickState {
     }
   }, [activeChannelId]);
 
-  return { channels, activeChannelId, setActiveChannelId, messages, sendMessage, wsStatus };
+  return { channels, activeChannelId, setActiveChannelId, messages, sendMessage, sendTyping, wsStatus, typingUsers, onlineUsers };
 }
