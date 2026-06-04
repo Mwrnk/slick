@@ -124,7 +124,7 @@ export function getMessages(
       FROM messages m
       JOIN users u ON u.id = m.user_id
       WHERE m.channel_id = ?
-      ORDER BY m.created_at DESC
+      ORDER BY m.created_at DESC, m.id DESC
       LIMIT ?
     `).all(channelId, cap + 1) as Message[];
   }
