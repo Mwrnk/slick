@@ -41,6 +41,12 @@ export class RoomManager {
     this.onlineUsers.delete(userId);
   }
 
+  getChannelMembers(channelId: string): { userId: string; username: string }[] {
+    const members = this.channels.get(channelId);
+    if (!members) return [];
+    return Array.from(members).map((ws) => ({ userId: ws.data.userId, username: ws.data.username }));
+  }
+
   getOnlineUsers(): { userId: string; username: string }[] {
     return Array.from(this.onlineUsers.entries()).map(([userId, username]) => ({ userId, username }));
   }

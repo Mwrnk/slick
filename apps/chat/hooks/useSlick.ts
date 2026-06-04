@@ -130,8 +130,16 @@ export function useSlick({ token }: Options): SlickState {
             next.set(msg.channelId, current.filter((u: string) => u !== msg.username));
             return next;
           });
-        } else if (msg.type === 'presence' && msg.status === 'offline') {
-          setOnlineUsers(prev => prev.filter((u) => u.userId !== msg.userId));
+        } else if (msg.type === 'presence') {
+          if (msg.status === 'online') {
+            setOnlineUsers(prev =>
+              prev.some((u) => u.userId === msg.userId)
+                ? prev
+                : [...prev, { userId: msg.userId, username: msg.username }]
+            );
+          } else if (msg.status === 'offline') {
+            setOnlineUsers(prev => prev.filter((u) => u.userId !== msg.userId));
+          }
         }
       };
 

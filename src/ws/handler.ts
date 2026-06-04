@@ -33,8 +33,14 @@ export function handleMessage(
     case "join": {
       const { channelId } = event;
       if (!channelId) { send(ws, { type: "error", message: "channelId required" }); return; }
+      const existingMembers = rooms.getChannelMembers(channelId);
       rooms.join(channelId, ws);
       rooms.broadcast(channelId, { type: "joined", channelId, userId, username });
+      for (const member of existingMembers) {
+        if (member.userId !== userId) {
+          send(ws, { type: "presence", userId: member.userId, username: member.username, status: "online" });
+        }
+      }
       break;
     }
     case "leave": {
