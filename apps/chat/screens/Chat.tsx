@@ -12,11 +12,19 @@ import type { SlickState, Message } from "../hooks/useSlick";
 
 type Mode = "nav" | "input";
 
-interface ChannelMessagesProps {
-  messages: Message[];
+function typingLabel(names: string[]): string {
+  if (names.length === 0) return '';
+  if (names.length === 1) return `${names[0]} está digitando...`;
+  if (names.length === 2) return `${names[0]} e ${names[1]} estão digitando...`;
+  return `${names.length} pessoas estão digitando...`;
 }
 
-const ChannelMessages = ({ messages }: ChannelMessagesProps) => (
+interface ChannelMessagesProps {
+  messages: Message[];
+  typingLabel: string;
+}
+
+const ChannelMessages = ({ messages, typingLabel: label }: ChannelMessagesProps) => (
   <ChatThread>
     {messages.map((msg) =>
       msg.system ? (
@@ -34,7 +42,31 @@ const ChannelMessages = ({ messages }: ChannelMessagesProps) => (
         </ChatMessage>
       )
     )}
+    {label ? (
+      <Box paddingX={1}>
+        <Text dimColor>{'░ ' + label}</Text>
+      </Box>
+    ) : null}
   </ChatThread>
+);
+
+interface OnlineSidebarProps {
+  users: { userId: string; username: string }[];
+}
+
+const OnlineSidebar = ({ users }: OnlineSidebarProps) => (
+  <Box
+    flexDirection="column"
+    width={16}
+    borderStyle="single"
+    borderColor="gray"
+    paddingX={1}
+  >
+    <Text dimColor bold>Online</Text>
+    {users.map((u) => (
+      <Text key={u.userId} color="green">{'● ' + u.username}</Text>
+    ))}
+  </Box>
 );
 
 interface ChatProps extends SlickState {}
@@ -45,7 +77,10 @@ export function Chat({
   setActiveChannelId,
   messages,
   sendMessage,
+  sendTyping,
   wsStatus,
+  typingUsers,
+  onlineUsers,
 }: ChatProps) {
   const [mode, setMode] = useState<Mode>("nav");
   const [inputText, setInputText] = useState("");
@@ -89,6 +124,7 @@ export function Chat({
           !key.tab
         ) {
           setInputText((t) => t + input);
+          sendTyping();
         }
       }
     },
@@ -98,10 +134,15 @@ export function Chat({
   const tabs = useMemo(
     () => channels.map((ch) => ({
       key: ch.id,
-      label: "#" + ch.name,
-      content: <ChannelMessages messages={messages.get(ch.id) ?? []} />,
+      label: '#' + ch.name,
+      content: (
+        <ChannelMessages
+          messages={messages.get(ch.id) ?? []}
+          typingLabel={typingLabel(typingUsers.get(ch.id) ?? [])}
+        />
+      ),
     })),
-    [channels, messages]
+    [channels, messages, typingUsers]
   );
 
   return (
@@ -109,17 +150,27 @@ export function Chat({
       <AppShell>
         <AppShell.Header>
           <Box justifyContent="space-between" paddingX={1}>
-            <Text bold>Slick</Text>
+            <Box gap={1}>
+              <Text bold>Slick</Text>
+              {onlineUsers.length > 0 && (
+                <Text color="green">· ● {onlineUsers.length} online</Text>
+              )}
+            </Box>
             <Text dimColor>{wsIndicator}</Text>
           </Box>
         </AppShell.Header>
         <AppShell.Content>
-          <Tabs
-            tabs={tabs}
-            activeTab={activeChannelId}
-            onTabChange={setActiveChannelId}
-            isActive={mode === "nav"}
-          />
+          <Box flexDirection="row" flexGrow={1}>
+            <Box flexGrow={1}>
+              <Tabs
+                tabs={tabs}
+                activeTab={activeChannelId}
+                onTabChange={setActiveChannelId}
+                isActive={mode === 'nav'}
+              />
+            </Box>
+            <OnlineSidebar users={onlineUsers} />
+          </Box>
         </AppShell.Content>
         <Box
           borderStyle="single"
